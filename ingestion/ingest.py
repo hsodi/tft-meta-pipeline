@@ -111,35 +111,7 @@ def flatten_matches(matches: list) -> list:
 
     return rows
 
-def create_table_if_not_exists(client: bigquery.Client):
-    """
-    Create the BigQuery table with explicit schema if it doesn't exist
-    Explicit schemas are better than auto-detect -- no surprise type mismatches
-    """
-    table_ref = f"{PROJECT_ID}.{DATASET}.{TABLE}"
 
-    schema = [
-        bigquery.SchemaField("match_id", "STRING", mode = "REQUIRED"),
-        bigquery.SchemaField("game_datetime","INTEGER"),
-        bigquery.SchemaField("tft_set", "INTEGER"),
-        bigquery.SchemaField("game_variation", "STRING"),
-        bigquery.SchemaField("puuid", "STRING"),
-        bigquery.SchemaField("placement", "INTEGER"),
-        bigquery.SchemaField("augments", "STRING"),
-        bigquery.SchemaField("units", "STRING"),
-        bigquery.SchemaField("traits","STRING"),
-        bigquery.SchemaField("total_damage_to_player", "INTEGER"),
-        bigquery.SchemaField("last_round", "INTEGER"),
-        bigquery.SchemaField("level", "INTEGER"),
-        bigquery.SchemaField("ingested_at", "STRING")
-    ]
-    table = bigquery.Table(table_ref, schema = schema)
-    try:
-        client.get_table(table_ref)
-        print(f"Table {table_ref} already exists")
-    except Exception:
-        client.create_table(table)
-        print(f"Created table {table_ref}")
     
 def load_to_bigquery(rows:list):
     """
@@ -147,16 +119,41 @@ def load_to_bigquery(rows:list):
     Uses insert_rows_json for small batches - switch to load_table_from_json for larger volumes later
     """
     client = bigquery.Client(project = PROJECT_ID)
-    create_table_if_not_exists(client)
 
     table_ref = f"{PROJECT_ID}.{DATASET}.{TABLE}"
 
-    errors = client.insert_rows_json(table_ref, rows)
+    job_config = bigquery.LoadJobConfig(
+        schema = [
+            bigquery.SchemaField("match_id", "STRING", mode = "REQUIRED"),
+            bigquery.SchemaField("game_datetime","INTEGER"),
+            bigquery.SchemaField("tft_set", "INTEGER"),
+            bigquery.SchemaField("game_variation", "STRING"),
+            bigquery.SchemaField("puuid", "STRING"),
+            bigquery.SchemaField("placement", "INTEGER"),
+            bigquery.SchemaField("augments", "STRING"),
+            bigquery.SchemaField("units", "STRING"),
+            bigquery.SchemaField("traits","STRING"),
+            bigquery.SchemaField("total_damage_to_players", "INTEGER"),
+            bigquery.SchemaField("last_round", "INTEGER"),
+            bigquery.SchemaField("level", "INTEGER"),
+            bigquery.SchemaField("ingested_at", "STRING")
+        ],
+        write_disposition = bigquery.WriteDisposition.WRITE_APPEND,
+    )
 
-    if errors:
-        print(f"BigQuery insert errors: {errors}")
-    else: 
-        print(f"Successfully loaded {len(rows)} rows into {table_ref}")
+    load_job = client.load_table_from_json(
+        rows,
+        table_ref,
+        job_config=job_config
+    )
+
+    load_job.result()  # wait for job to complete
+
+    table = client.get_table(table_ref)
+    print(f"Successfully loaded {len(rows)} rows into {table_ref}")
+    print(f"Total rows in table: {table.num_rows}")
+
+
 
 if __name__ == "__main__":
     # Small run first — 3 summoners, 3 matches each = 9 matches max
