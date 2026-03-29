@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: tft_raw
+    database: tft-meta-pipeline
+    schema: tft_raw
+    tables:
+      - name: raw_matches
+
+models:
+  - name: stg_matches
+    description: "Cleaned and deduplicated match participant data"
+    columns:
+      - name: match_id
+        tests:
+          - not_null
+      - name: puuid
+        tests:
+          - not_null
+      - name: placement
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8]
+                quote: false
+      - name: is_top4
+        tests:
+          - not_null
+      - name: is_first
+        tests:
+          - not_null

@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: mart_augment_stats
+    description: "Augment win rates with Wilson confidence intervals"
+    columns:
+      - name: augment
+        tests:
+          - not_null
+          - unique
+      - name: games_played
+        tests:
+          - not_null
+      - name: win_rate
+        tests:
+          - not_null
+
+  - name: mart_unit_stats
+    description: "Unit performance stats with rankings"
+    columns:
+      - name: unit_name
+        tests:
+          - not_null
+          - unique
+      - name: games_played
+        tests:
+          - not_null
