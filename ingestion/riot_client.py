@@ -50,7 +50,7 @@ class RiotClient:
         """Get recent match IDs for a player."""
         return self._get(self.REGIONAL_URL, f"/tft/match/v1/matches/by-puuid/{puuid}/ids", params = {"count": count})
     
-    def get_match_details(self, match_id:str) -> dict:
+    def get_match_detail(self, match_id:str) -> dict:
         """Get full match data."""
         return self._get(self.REGIONAL_URL, f"/tft/match/v1/matches/{match_id}")
     
