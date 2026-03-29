@@ -1,7 +1,16 @@
 import json
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+from google.cloud import bigquery
 from ingestion.riot_client import RiotClient
+
+load_dotenv()
+
+PROJECT_ID = os.getenv("GCP_PROJECT_ID")
+DATASET = "tft_raw"
+TABLE = "raw_matches"
+
 
 def fetch_meta_matches(n_summoners: int = 20, matches_per: int = 10) -> list:
     """
@@ -102,14 +111,60 @@ def flatten_matches(matches: list) -> list:
 
     return rows
 
+def create_table_if_not_exists(client: bigquery.Client):
+    """
+    Create the BigQuery table with explicit schema if it doesn't exist
+    Explicit schemas are better than auto-detect -- no surprise type mismatches
+    """
+    table_ref = f"{PROJECT_ID}.{DATASET}.{TABLE}"
+
+    schema = [
+        bigquery.SchemaField("match_id", "STRING", mode = "REQUIRED"),
+        bigquery.SchemaField("game_datetime","INTEGER"),
+        bigquery.SchemaField("tft_set", "INTEGER"),
+        bigquery.SchemaField("game_variation", "STRING"),
+        bigquery.SchemaField("puuid", "STRING"),
+        bigquery.SchemaField("placement", "INTEGER"),
+        bigquery.SchemaField("augments", "STRING"),
+        bigquery.SchemaField("units", "STRING"),
+        bigquery.SchemaField("traits","STRING"),
+        bigquery.SchemaField("total_damage_to_player", "INTEGER"),
+        bigquery.SchemaField("last_round", "INTEGER"),
+        bigquery.SchemaField("level", "INTEGER"),
+        bigquery.SchemaField("ingested_at", "STRING")
+    ]
+    table = bigquery.Table(table_ref, schema = schema)
+    try:
+        client.get_table(table_ref)
+        print(f"Table {table_ref} already exists")
+    except Exception:
+        client.create_table(table)
+        print(f"Created table {table_ref}")
+    
+def load_to_bigquery(rows:list):
+    """
+    Load flattened rows into BigQuery
+    Uses insert_rows_json for small batches - switch to load_table_from_json for larger volumes later
+    """
+    client = bigquery.Client(project = PROJECT_ID)
+    create_table_if_not_exists(client)
+
+    table_ref = f"{PROJECT_ID}.{DATASET}.{TABLE}"
+
+    errors = client.insert_rows_json(table_ref, rows)
+
+    if errors:
+        print(f"BigQuery insert errors: {errors}")
+    else: 
+        print(f"Successfully loaded {len(rows)} rows into {table_ref}")
 
 if __name__ == "__main__":
     # Small run first — 3 summoners, 3 matches each = 9 matches max
     # Scale up once everything is confirmed working
     matches = fetch_meta_matches(n_summoners=3, matches_per=3)
-    filepath = save_raw(matches)
+    save_raw(matches)
 
     # Preview flattened output
     rows = flatten_matches(matches)
     print(f"\nFlattened into {len(rows)} participant rows")
-    print(f"Sample row keys: {list(rows[0].keys())}")
+    load_to_bigquery(rows)
