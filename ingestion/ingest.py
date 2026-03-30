@@ -158,10 +158,10 @@ def load_to_bigquery(rows:list):
 if __name__ == "__main__":
     # Small run first — 3 summoners, 3 matches each = 9 matches max
     # Scale up once everything is confirmed working
-    matches = fetch_meta_matches(n_summoners=3, matches_per=3)
-    save_raw(matches)
 
     # Preview flattened output
+    matches = fetch_meta_matches(n_summoners=10, matches_per=10)
+    save_raw(matches)
     rows = flatten_matches(matches)
     print(f"\nFlattened into {len(rows)} participant rows")
     load_to_bigquery(rows)

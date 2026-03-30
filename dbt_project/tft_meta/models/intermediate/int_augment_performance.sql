@@ -32,7 +32,7 @@ select
     round(win_rate, 4)                                  as win_rate,
     round(avg_placement, 3)                             as avg_placement,
     case 
-        when games_played >= 30 then true 
+        when games_played >= 5 then true 
         else false 
     end                                                 as sufficient_sample
 from augment_stats
