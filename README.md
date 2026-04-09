@@ -101,6 +101,9 @@ challenger players (Set 16)
 
 ## Project Structure
 
+## Project Structure
+
+\```
 tft-meta-pipeline/
 ├── ingestion/
 │   ├── riot_client.py      # API client with rate limiting
@@ -116,6 +119,7 @@ tft-meta-pipeline/
 ├── dashboard/
 │   └── app.py              # Streamlit dashboard
 └── requirements.txt
+\```
 
 ---
 
@@ -133,10 +137,10 @@ pip install -r requirements.txt
 **2 — Set up credentials**
 
 Create a `.env` file:
-
+\```
 RIOT_API_KEY=your_key_from_developer.riotgames.com
 GCP_PROJECT_ID=your_gcp_project_id
-
+\```
 Authenticate with GCP:
 ```bash
 gcloud auth application-default login
