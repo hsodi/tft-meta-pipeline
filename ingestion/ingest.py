@@ -160,7 +160,7 @@ if __name__ == "__main__":
     # Scale up once everything is confirmed working
 
     # Preview flattened output
-    matches = fetch_meta_matches(n_summoners=10, matches_per=10)
+    matches = fetch_meta_matches(n_summoners=50, matches_per=20)
     save_raw(matches)
     rows = flatten_matches(matches)
     print(f"\nFlattened into {len(rows)} participant rows")
